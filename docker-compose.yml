@@ -1,0 +1,33 @@
+version: '3.8'
+
+services:
+  ztna-proxy:
+    build:
+      context: .
+      dockerfile: Dockerfile
+    ports:
+      - "8080:8080"
+    environment:
+      - ZTNA_LISTEN_ADDR=:8080
+      - ZTNA_HMAC_SECRET=default-development-secret-change-in-prod-32bytes
+    volumes:
+      - ./examples/docker-config.json:/etc/ztna/config.json:ro
+    depends_on:
+      - admin-service
+      - billing-service
+
+  admin-service:
+    build:
+      context: .
+      dockerfile: Dockerfile
+    entrypoint: ["/usr/local/bin/upstream", "-port", "8081", "-name", "admin-internal-service"]
+    expose:
+      - "8081"
+
+  billing-service:
+    build:
+      context: .
+      dockerfile: Dockerfile
+    entrypoint: ["/usr/local/bin/upstream", "-port", "8082", "-name", "billing-internal-service"]
+    expose:
+      - "8082"
