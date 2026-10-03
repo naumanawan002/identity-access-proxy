@@ -1,0 +1,65 @@
+{
+  "listen_addr": ":8080",
+  "tls": {
+    "enabled": false,
+    "upstream_mtls": false
+  },
+  "auth": {
+    "signing_algorithm": "HS256",
+    "hmac_secret": "default-development-secret-change-in-prod-32bytes",
+    "expected_issuer": "ztna-idp",
+    "expected_audience": "ztna-gateway",
+    "clock_skew_seconds": 5
+  },
+  "routes": [
+    {
+      "path_prefix": "/api/v1/admin",
+      "target_url": "http://127.0.0.1:8081",
+      "strip_path": false
+    },
+    {
+      "path_prefix": "/api/v1/billing",
+      "target_url": "http://127.0.0.1:8082",
+      "strip_path": false
+    },
+    {
+      "path_prefix": "/public",
+      "target_url": "http://127.0.0.1:8081",
+      "strip_path": false
+    }
+  ],
+  "policies": {
+    "default_action": "deny",
+    "rules": [
+      {
+        "id": "rule-public-access",
+        "description": "Public documentation or status endpoints",
+        "path_prefix": "/public",
+        "action": "allow"
+      },
+      {
+        "id": "rule-billing-access",
+        "description": "Requires billing role and medium device trust",
+        "path_prefix": "/api/v1/billing",
+        "required_roles": ["billing", "finance", "admin"],
+        "device_requirements": {
+          "min_trust_level": "medium",
+          "require_managed": true
+        },
+        "action": "allow"
+      },
+      {
+        "id": "rule-admin-superpowers",
+        "description": "Requires admin role, high device trust, disk encryption, and managed hardware",
+        "path_prefix": "/api/v1/admin",
+        "required_roles": ["admin"],
+        "device_requirements": {
+          "min_trust_level": "high",
+          "require_managed": true,
+          "require_disk_encrypt": true
+        },
+        "action": "allow"
+      }
+    ]
+  }
+}
